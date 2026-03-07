@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/client";
 
 type Opdracht = {
   id: string;
@@ -25,6 +25,8 @@ export default function OpdrachtDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const supabase = createClient();
+  
   const [opdracht, setOpdracht] = useState<Opdracht | null>(null);
   const [bestanden, setBestanden] = useState<Bestand[]>([]);
   const [bestand, setBestand] = useState<File | null>(null);
