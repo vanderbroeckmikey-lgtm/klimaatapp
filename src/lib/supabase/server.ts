@@ -13,7 +13,7 @@ export async function createClient() {
           return cookieStore.getAll();
         },
         setAll() {
-          // In server components niet nodig
+          // niet nodig in server component
         },
       },
     }
