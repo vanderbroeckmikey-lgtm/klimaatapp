@@ -11,7 +11,10 @@ export default function LogoutButton() {
   }
 
   return (
-    <button onClick={handleLogout} className="ml-auto">
+    <button
+      onClick={handleLogout}
+      className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100 transition"
+    >
       Uitloggen
     </button>
   );
