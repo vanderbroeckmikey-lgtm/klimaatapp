@@ -17,18 +17,19 @@ export default function KlantBestandenPage({
   params: Promise<{ id: string }>;
 }) {
   const supabase = createClient();
-  
+
+  const [klantId, setKlantId] = useState("");
   const [bestand, setBestand] = useState<File | null>(null);
   const [bestanden, setBestanden] = useState<Bestand[]>([]);
   const [melding, setMelding] = useState("");
   const [laden, setLaden] = useState(true);
   const [uploaden, setUploaden] = useState(false);
 
-  async function loadBestanden(klantId: string) {
+  async function loadBestanden(id: string) {
     const { data, error } = await supabase
       .from("bestanden")
       .select("id, bestandsnaam, opslag_pad, type")
-      .eq("klant_id", klantId)
+      .eq("klant_id", id)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -43,6 +44,7 @@ export default function KlantBestandenPage({
   useEffect(() => {
     async function init() {
       const { id } = await params;
+      setKlantId(id);
       await loadBestanden(id);
     }
 
@@ -53,6 +55,15 @@ export default function KlantBestandenPage({
     e.preventDefault();
     setMelding("");
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setMelding("Je bent niet ingelogd. Log eerst in.");
+      return;
+    }
+
     if (!bestand) {
       setMelding("Kies eerst een bestand.");
       return;
@@ -60,13 +71,12 @@ export default function KlantBestandenPage({
 
     setUploaden(true);
 
-    const { id } = await params;
     const ext = bestand.name.split(".").pop();
     const bestandsnaam = `${Date.now()}-${bestand.name}`;
-    const opslagPad = `${id}/${bestandsnaam}`;
+    const opslagPad = `${klantId}/${bestandsnaam}`;
 
     const { error: uploadError } = await supabase.storage
-      .from("klimaatapptanden")
+      .from("klimaatapp")
       .upload(opslagPad, bestand);
 
     if (uploadError) {
@@ -77,7 +87,7 @@ export default function KlantBestandenPage({
 
     const { error: dbError } = await supabase.from("bestanden").insert([
       {
-        klant_id: id,
+        klant_id: klantId,
         bestandsnaam: bestand.name,
         opslag_pad: opslagPad,
         type: ext || null,
@@ -92,13 +102,13 @@ export default function KlantBestandenPage({
 
     setBestand(null);
     setMelding("Bestand succesvol geüpload.");
-    await loadBestanden(id);
+    await loadBestanden(klantId);
     setUploaden(false);
   }
 
   function getPublicUrl(opslagPad: string) {
     const { data } = supabase.storage
-      .from("klimaatapptanden")
+      .from("klimaatapp")
       .getPublicUrl(opslagPad);
 
     return data.publicUrl;
@@ -108,7 +118,7 @@ export default function KlantBestandenPage({
     <main className="p-8 max-w-4xl space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <Link href={`/klanten/${(params as any).id ?? ""}`} className="text-sm underline">
+          <Link href={`/klanten/${klantId}`} className="text-sm underline">
             ← Terug naar klant
           </Link>
           <h1 className="text-3xl font-bold mt-2">Bestanden</h1>

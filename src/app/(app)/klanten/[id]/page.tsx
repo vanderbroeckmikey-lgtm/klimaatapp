@@ -24,15 +24,27 @@ type Opdracht = {
   omschrijving: string | null;
 };
 
+type Installatie = {
+  id: string;
+  naam: string;
+  ruimte: string | null;
+  merk: string | null;
+  model: string | null;
+  koudemiddel_type: string;
+  status: string;
+  installatienummer: string | null;
+};
+
 export default function KlantDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const supabase = createClient();
-  
+
   const [klant, setKlant] = useState<Klant | null>(null);
   const [opdrachten, setOpdrachten] = useState<Opdracht[]>([]);
+  const [installaties, setInstallaties] = useState<Installatie[]>([]);
   const [laden, setLaden] = useState(true);
   const [fout, setFout] = useState("");
 
@@ -40,35 +52,49 @@ export default function KlantDetailPage({
     async function loadData() {
       const { id } = await params;
 
-      const { data: klantData, error: klantError } = await supabase
-        .from("klanten")
-        .select("*")
-        .eq("id", id)
-        .single();
+      const [
+        klantResult,
+        opdrachtenResult,
+        installatiesResult,
+      ] = await Promise.all([
+        supabase.from("klanten").select("*").eq("id", id).single(),
+        supabase
+          .from("opdrachten")
+          .select("id, titel, status, uitvoerdatum, omschrijving")
+          .eq("klant_id", id)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("installaties")
+          .select(
+            "id, naam, ruimte, merk, model, koudemiddel_type, status, installatienummer"
+          )
+          .eq("klant_id", id)
+          .order("created_at", { ascending: false }),
+      ]);
 
-      const { data: opdrachtenData, error: opdrachtenError } = await supabase
-        .from("opdrachten")
-        .select("id, titel, status, uitvoerdatum, omschrijving")
-        .eq("klant_id", id)
-        .order("created_at", { ascending: false });
-
-      if (klantError) {
-        setFout(klantError.message);
+      if (klantResult.error) {
+        setFout(klantResult.error.message);
       } else {
-        setKlant(klantData);
+        setKlant(klantResult.data);
       }
 
-      if (opdrachtenError) {
-        setFout(opdrachtenError.message);
-      } else if (opdrachtenData) {
-        setOpdrachten(opdrachtenData);
+      if (opdrachtenResult.error) {
+        setFout(opdrachtenResult.error.message);
+      } else {
+        setOpdrachten(opdrachtenResult.data || []);
+      }
+
+      if (installatiesResult.error) {
+        setFout(installatiesResult.error.message);
+      } else {
+        setInstallaties(installatiesResult.data || []);
       }
 
       setLaden(false);
     }
 
     loadData();
-  }, [params]);
+  }, [params, supabase]);
 
   if (laden) {
     return (
@@ -87,8 +113,8 @@ export default function KlantDetailPage({
   }
 
   return (
-    <main className="p-8 space-y-8">
-      <div className="flex items-center justify-between">
+    <main className="space-y-8">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <Link href="/klanten" className="text-sm underline">
             ← Terug naar klanten
@@ -96,26 +122,32 @@ export default function KlantDetailPage({
           <h1 className="text-3xl font-bold mt-2">{klant.naam}</h1>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex gap-3 flex-wrap">
+          <Link
+            href={`/klanten/${klant.id}/installaties/nieuw`}
+            className="rounded-xl bg-red-600 px-4 py-3 font-medium text-white hover:bg-red-700 transition"
+          >
+            Nieuwe installatie
+          </Link>
+
           <Link
             href={`/klanten/${klant.id}/bestanden`}
-            className="border rounded-lg px-4 py-2 bg-white"
+            className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 font-medium text-red-700 hover:bg-red-100 transition"
           >
             Bestanden
           </Link>
 
           <Link
             href={`/klanten/${klant.id}/opdrachten/nieuw`}
-            className="bg-black text-white px-4 py-2 rounded-lg"
+            className="rounded-xl border border-gray-200 bg-white px-4 py-3 font-medium text-gray-800 hover:bg-gray-50 transition"
           >
             Nieuwe opdracht
           </Link>
         </div>
       </div>
 
-      <section className="bg-white border rounded-2xl p-6">
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <h2 className="text-xl font-semibold mb-4">Klantgegevens</h2>
-
         <div className="space-y-2">
           <p><strong>Contactpersoon:</strong> {klant.contactpersoon || "-"}</p>
           <p><strong>E-mail:</strong> {klant.email || "-"}</p>
@@ -127,7 +159,51 @@ export default function KlantDetailPage({
         </div>
       </section>
 
-      <section className="bg-white border rounded-2xl p-6">
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">Installaties</h2>
+          <span className="rounded-full bg-red-50 px-3 py-1 text-sm font-medium text-red-700">
+            {installaties.length} totaal
+          </span>
+        </div>
+
+        {installaties.length === 0 ? (
+          <p>Nog geen installaties toegevoegd.</p>
+        ) : (
+          <div className="grid gap-4">
+            {installaties.map((installatie) => (
+              <div
+                key={installatie.id}
+                className="rounded-xl border border-gray-200 p-4 bg-gray-50"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="font-semibold text-lg">{installatie.naam}</h3>
+                    <p className="text-sm text-gray-600">
+                      Ruimte: {installatie.ruimte || "-"}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Installatienummer: {installatie.installatienummer || "-"}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {installatie.merk || "-"} {installatie.model || ""}
+                    </p>
+                  </div>
+
+                  <div className="text-right">
+                    <p className="text-sm font-medium text-gray-700">
+                      {installatie.koudemiddel_type}
+                    </p>
+                    <p className="text-sm text-gray-600">{installatie.status}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <h2 className="text-xl font-semibold mb-4">Opdrachten</h2>
 
         {opdrachten.length === 0 ? (
@@ -138,7 +214,7 @@ export default function KlantDetailPage({
               <Link
                 key={opdracht.id}
                 href={`/opdrachten/${opdracht.id}`}
-                className="border rounded-xl p-4 block hover:shadow"
+                className="rounded-xl border border-gray-200 p-4 block hover:shadow-md transition bg-white"
               >
                 <h3 className="font-semibold text-lg">{opdracht.titel}</h3>
                 <p><strong>Status:</strong> {opdracht.status || "-"}</p>

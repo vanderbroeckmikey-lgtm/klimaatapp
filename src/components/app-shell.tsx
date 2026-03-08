@@ -8,6 +8,9 @@ import LogoutButton from "@/components/logout-button";
 const links = [
   { href: "/", label: "Dashboard" },
   { href: "/klanten", label: "Klanten" },
+  { href: "/installaties", label: "Installaties" },
+  { href: "/werkbonnen", label: "Werkbonnen" },
+  { href: "/koudemiddel", label: "Koudemiddelvoorraad" },
   { href: "/klanten/nieuw", label: "Nieuwe klant" },
 ];
 
