@@ -52,25 +52,22 @@ export default function KlantDetailPage({
     async function loadData() {
       const { id } = await params;
 
-      const [
-        klantResult,
-        opdrachtenResult,
-        installatiesResult,
-      ] = await Promise.all([
-        supabase.from("klanten").select("*").eq("id", id).single(),
-        supabase
-          .from("opdrachten")
-          .select("id, titel, status, uitvoerdatum, omschrijving")
-          .eq("klant_id", id)
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("installaties")
-          .select(
-            "id, naam, ruimte, merk, model, koudemiddel_type, status, installatienummer"
-          )
-          .eq("klant_id", id)
-          .order("created_at", { ascending: false }),
-      ]);
+      const [klantResult, opdrachtenResult, installatiesResult] =
+        await Promise.all([
+          supabase.from("klanten").select("*").eq("id", id).single(),
+          supabase
+            .from("opdrachten")
+            .select("id, titel, status, uitvoerdatum, omschrijving")
+            .eq("klant_id", id)
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("installaties")
+            .select(
+              "id, naam, ruimte, merk, model, koudemiddel_type, status, installatienummer"
+            )
+            .eq("klant_id", id)
+            .order("created_at", { ascending: false }),
+        ]);
 
       if (klantResult.error) {
         setFout(klantResult.error.message);
@@ -128,6 +125,13 @@ export default function KlantDetailPage({
             className="rounded-xl bg-red-600 px-4 py-3 font-medium text-white hover:bg-red-700 transition"
           >
             Nieuwe installatie
+          </Link>
+
+          <Link
+            href={`/klanten/${klant.id}/werkbonnen/nieuw`}
+            className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 font-medium text-red-700 hover:bg-red-100 transition"
+          >
+            Nieuwe werkbon
           </Link>
 
           <Link
