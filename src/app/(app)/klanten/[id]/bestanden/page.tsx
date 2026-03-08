@@ -66,7 +66,7 @@ export default function KlantBestandenPage({
     const opslagPad = `${id}/${bestandsnaam}`;
 
     const { error: uploadError } = await supabase.storage
-      .from("klant-bestanden")
+      .from("klimaatapptanden")
       .upload(opslagPad, bestand);
 
     if (uploadError) {
@@ -98,7 +98,7 @@ export default function KlantBestandenPage({
 
   function getPublicUrl(opslagPad: string) {
     const { data } = supabase.storage
-      .from("klant-bestanden")
+      .from("klimaatapptanden")
       .getPublicUrl(opslagPad);
 
     return data.publicUrl;
