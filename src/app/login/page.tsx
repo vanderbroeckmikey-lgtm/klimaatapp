@@ -79,14 +79,14 @@ export default function LoginPage() {
           <div className="w-full">
             <div className="md:hidden flex items-center gap-3 mb-8">
               <Image
-                src="/logo.png"
+                src="/logo.jpg"
                 alt="Klimaattechniek Benelux"
                 width={46}
                 height={46}
                 className="rounded-lg object-contain"
               />
               <div>
-                <h1 className="font-bold">Klimaattechniek Benelux</h1>
+                <h1 className="font-bold">Klimaat Techniek Benelux</h1>
                 <p className="text-sm text-neutral-500">Interne bedrijfsapp</p>
               </div>
             </div>
