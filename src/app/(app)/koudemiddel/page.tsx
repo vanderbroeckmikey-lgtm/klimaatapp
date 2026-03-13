@@ -20,19 +20,79 @@ export default function KoudemiddelPage() {
   const [cilinders, setCilinders] = useState<Cilinder[]>([]);
   const [laden, setLaden] = useState(true);
 
-  useEffect(() => {
-    async function load() {
-      const { data } = await supabase
-        .from("koudemiddel_cilinders")
-        .select("*")
-        .order("created_at", { ascending: false });
+  async function load() {
+    setLaden(true);
 
-      setCilinders(data || []);
-      setLaden(false);
+    const { data, error } = await supabase
+      .from("cilinder_voorraad")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (!error && data) {
+      setCilinders(data);
+    }
+
+    setLaden(false);
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function verwijderCilinder(id: string) {
+    const bevestiging = confirm(
+      "Weet je zeker dat je deze cilinder wilt verwijderen?"
+    );
+
+    if (!bevestiging) return;
+
+    const { error } = await supabase
+      .from("koudemiddel_cilinders")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      alert("Verwijderen mislukt");
+      return;
     }
 
     load();
-  }, [supabase]);
+  }
+
+  async function voegMutatieToe(cilinderId: string) {
+    const kgInput = prompt(
+      "Aantal kg\nGebruik - voor verbruik\nGebruik + voor vullen of correctie"
+    );
+
+    if (!kgInput) return;
+
+    const kg = Number(kgInput);
+
+    if (isNaN(kg)) {
+      alert("Ongeldig getal");
+      return;
+    }
+
+    const type = kg < 0 ? "verbruikt" : "gevuld";
+
+    const opmerking = prompt("Opmerking (optioneel)") || "";
+
+    const { error } = await supabase
+      .from("koudemiddel_mutaties")
+      .insert({
+        cilinder_id: cilinderId,
+        type: type,
+        hoeveelheid_kg: kg,
+        opmerking: opmerking,
+      });
+
+    if (error) {
+      alert("Mutatie opslaan mislukt");
+      return;
+    }
+
+    load();
+  }
 
   return (
     <main className="space-y-8">
@@ -41,7 +101,7 @@ export default function KoudemiddelPage() {
         <div>
           <h1 className="text-3xl font-bold">Koudemiddelvoorraad</h1>
           <p className="text-gray-600">
-            Overzicht van alle cilinders en voorraad.
+            Overzicht van alle cilinders en voorraad
           </p>
         </div>
 
@@ -61,14 +121,20 @@ export default function KoudemiddelPage() {
           <p>Nog geen cilinders toegevoegd.</p>
         ) : (
           <div className="grid gap-4">
+
             {cilinders.map((cilinder) => (
+
               <div
                 key={cilinder.id}
                 className="border rounded-xl p-4 bg-gray-50"
               >
-                <div className="flex justify-between">
 
-                  <div>
+                <div className="flex justify-between items-start">
+
+                  <Link
+                    href={`/koudemiddel/${cilinder.id}`}
+                    className="flex-1"
+                  >
                     <h3 className="font-semibold text-lg">
                       {cilinder.koudemiddel_type}
                     </h3>
@@ -80,23 +146,53 @@ export default function KoudemiddelPage() {
                     <p className="text-sm text-gray-600">
                       Startgewicht: {cilinder.startgewicht_kg} kg
                     </p>
-                  </div>
+
+                    {cilinder.leeggewicht_kg && (
+                      <p className="text-sm text-gray-600">
+                        Leeggewicht: {cilinder.leeggewicht_kg} kg
+                      </p>
+                    )}
+                  </Link>
 
                   <div className="text-right">
-                    <p className="font-medium">
-                      {cilinder.huidig_gewicht_kg} kg
+
+                    <p className="font-semibold text-lg">
+                      {Number(cilinder.huidig_gewicht_kg).toFixed(2)} kg
                     </p>
 
                     <p className="text-sm text-gray-600">
                       Status: {cilinder.status}
                     </p>
+
+                    <div className="flex gap-2 mt-3 justify-end">
+
+                      <button
+                        onClick={() => voegMutatieToe(cilinder.id)}
+                        className="text-sm bg-green-600 text-white px-3 py-1 rounded-lg hover:bg-green-700"
+                      >
+                        Mutatie
+                      </button>
+
+                      <button
+                        onClick={() => verwijderCilinder(cilinder.id)}
+                        className="text-sm bg-red-600 text-white px-3 py-1 rounded-lg hover:bg-red-700"
+                      >
+                        Verwijderen
+                      </button>
+
+                    </div>
+
                   </div>
 
                 </div>
+
               </div>
+
             ))}
+
           </div>
         )}
+
       </section>
 
     </main>

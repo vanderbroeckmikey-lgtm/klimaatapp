@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import LogoutButton from "@/components/logout-button";
+import { useState } from "react";
 
 const links = [
   { href: "/", label: "Dashboard" },
@@ -20,10 +21,13 @@ export default function AppShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <div className="flex min-h-screen">
+
+        {/* Sidebar voor desktop */}
         <aside className="hidden md:flex w-72 flex-col border-r border-gray-200 bg-white">
           <div className="border-b border-gray-200 px-6 py-5">
             <Link href="/" className="flex items-center gap-3">
@@ -38,9 +42,7 @@ export default function AppShell({
                 <div className="text-lg font-bold text-red-600">
                   Klimaat Techniek Benelux
                 </div>
-                <div className="text-xs text-gray-500">
-                  Interne bedrijfsapp
-                </div>
+                <div className="text-xs text-gray-500">Interne bedrijfsapp</div>
               </div>
             </Link>
           </div>
@@ -72,9 +74,13 @@ export default function AppShell({
           </div>
         </aside>
 
+        {/* Main content */}
         <div className="flex-1 flex flex-col">
+
+          {/* Header */}
           <header className="border-b border-gray-200 bg-white">
             <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-8">
+
               <div>
                 <h1 className="text-xl font-bold">Klimaattechniek Benelux</h1>
                 <p className="text-sm text-gray-500">
@@ -82,13 +88,50 @@ export default function AppShell({
                 </p>
               </div>
 
-              <div className="md:hidden">
+              {/* Hamburger + Logout mobiel */}
+              <div className="md:hidden flex items-center gap-2">
+                <button
+                  onClick={() => setMenuOpen(!menuOpen)}
+                  className="text-2xl font-bold"
+                >
+                  ☰
+                </button>
                 <LogoutButton />
               </div>
+
             </div>
+
+            {/* Mobiel menu */}
+            {menuOpen && (
+              <nav className="md:hidden bg-white border-b border-gray-200 px-4 py-3 space-y-2">
+                {links.map((link) => {
+                  const actief =
+                    pathname === link.href ||
+                    (link.href !== "/" && pathname.startsWith(link.href));
+
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setMenuOpen(false)}
+                      className={
+                        actief
+                          ? "block rounded-xl bg-red-50 border border-red-200 px-4 py-3 font-medium text-red-700"
+                          : "block rounded-xl px-4 py-3 font-medium text-gray-700 hover:bg-gray-100"
+                      }
+                    >
+                      {link.label}
+                    </Link>
+                  );
+                })}
+              </nav>
+            )}
+
           </header>
 
+          {/* Page content */}
           <main className="flex-1 px-4 py-6 md:px-8">{children}</main>
+
         </div>
       </div>
     </div>
