@@ -43,6 +43,25 @@ export default function InstallatiesPage() {
     loadInstallaties();
   }, [supabase]);
 
+  async function verwijderInstallatie(id: string) {
+    const confirmDelete = confirm(
+      "Weet je zeker dat je deze installatie wilt verwijderen?"
+    );
+
+    if (!confirmDelete) return;
+
+    const { error } = await supabase
+      .from("installaties")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      alert("Verwijderen mislukt: " + error.message);
+    } else {
+      setInstallaties((prev) => prev.filter((i) => i.id !== id));
+    }
+  }
+
   return (
     <main className="space-y-8">
       <div>
@@ -68,24 +87,48 @@ export default function InstallatiesPage() {
             {installaties.map((installatie) => (
               <div
                 key={installatie.id}
-                className="rounded-xl border border-gray-200 p-4 bg-gray-50"
+                className="rounded-xl border border-gray-200 p-4 bg-gray-50 flex justify-between items-start"
               >
-                <h2 className="text-lg font-semibold">{installatie.naam}</h2>
-                <p className="text-sm text-gray-600">
-                  Installatienummer: {installatie.installatienummer || "-"}
-                </p>
-                <p className="text-sm text-gray-600">
-                  Ruimte: {installatie.ruimte || "-"}
-                </p>
-                <p className="text-sm text-gray-600">
-                  Merk/model: {installatie.merk || "-"} {installatie.model || ""}
-                </p>
-                <p className="text-sm text-gray-600">
-                  Koudemiddel: {installatie.koudemiddel_type}
-                </p>
-                <p className="text-sm text-gray-600">
-                  Status: {installatie.status}
-                </p>
+                <div>
+                  <h2 className="text-lg font-semibold">{installatie.naam}</h2>
+
+                  <p className="text-sm text-gray-600">
+                    Installatienummer: {installatie.installatienummer || "-"}
+                  </p>
+
+                  <p className="text-sm text-gray-600">
+                    Ruimte: {installatie.ruimte || "-"}
+                  </p>
+
+                  <p className="text-sm text-gray-600">
+                    Merk/model: {installatie.merk || "-"}{" "}
+                    {installatie.model || ""}
+                  </p>
+
+                  <p className="text-sm text-gray-600">
+                    Koudemiddel: {installatie.koudemiddel_type}
+                  </p>
+
+                  <p className="text-sm text-gray-600">
+                    Status: {installatie.status}
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <Link
+                    href={`/installaties/${installatie.id}`}
+                    className="px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    Bewerken
+                  </Link>
+
+                  <button
+                    onClick={() => verwijderInstallatie(installatie.id)}
+                    className="px-3 py-1 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700"
+                  >
+                    Verwijderen
+                  </button>
+                </div>
               </div>
             ))}
           </div>

@@ -1,74 +1,58 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-type Werkbon = {
-  id: string;
-  klant: string;
-  installatie: string;
-  datum: string;
-  status: string;
-  opmerkingen: string | null;
-};
-
-export default function WerkbonDetailPage() {
+export default function WerkbonPage({
+  params,
+}: {
+  params: { id: string };
+}) {
   const supabase = createClient();
-  const params = useParams(); // haalt [id] op uit URL
-  const [werkbon, setWerkbon] = useState<Werkbon | null>(null);
-  const [laden, setLaden] = useState(true);
 
-  async function loadWerkbon() {
-    const { data, error } = await supabase
-      .from("werkbonnen")
-      .select("*")
-      .eq("id", params.id)
-      .single();
-
-    if (error) {
-      console.error("Kan werkbon niet laden:", error);
-      setLaden(false);
-      return;
-    }
-
-    setWerkbon(data);
-    setLaden(false);
-  }
+  const [werkbon, setWerkbon] = useState<any>(null);
 
   useEffect(() => {
-    loadWerkbon();
+    async function load() {
+      const { data } = await supabase
+        .from("werkbonnen")
+        .select("*")
+        .eq("id", params.id)
+        .single();
+
+      setWerkbon(data);
+    }
+
+    load();
   }, [params.id]);
 
-  if (laden) return <p>Laden...</p>;
-  if (!werkbon) return <p>Werkbon niet gevonden.</p>;
+  async function verwijderen() {
+    if (!confirm("Werkbon verwijderen?")) return;
+
+    await supabase
+      .from("werkbonnen")
+      .delete()
+      .eq("id", params.id);
+
+    window.location.href = "/";
+  }
+
+  if (!werkbon) return <p>laden...</p>;
 
   return (
-    <main className="space-y-6 bg-white rounded-xl p-6 shadow-sm">
-      <h1 className="text-2xl font-bold">Werkbon {werkbon.id}</h1>
+    <main className="max-w-3xl space-y-6">
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <p>
-            <span className="font-semibold">Klant:</span> {werkbon.klant}
-          </p>
-          <p>
-            <span className="font-semibold">Installatie:</span> {werkbon.installatie}
-          </p>
-          <p>
-            <span className="font-semibold">Datum:</span> {new Date(werkbon.datum).toLocaleDateString()}
-          </p>
-        </div>
+      <h1 className="text-3xl font-bold">
+        Werkbon {werkbon.bonnummer}
+      </h1>
 
-        <div>
-          <p>
-            <span className="font-semibold">Status:</span> {werkbon.status}
-          </p>
-          <p>
-            <span className="font-semibold">Opmerkingen:</span> {werkbon.opmerkingen || "-"}
-          </p>
-        </div>
-      </div>
+      <button
+        onClick={verwijderen}
+        className="bg-red-600 text-white px-4 py-2 rounded-xl"
+      >
+        Werkbon verwijderen
+      </button>
+
     </main>
   );
 }
